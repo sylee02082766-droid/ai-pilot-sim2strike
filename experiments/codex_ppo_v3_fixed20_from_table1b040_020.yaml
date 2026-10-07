@@ -1,0 +1,119 @@
+name: codex_ppo_v3_fixed20_from_table1b040_020
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_v3_fixed20_from_table1b040_020
+
+env:
+  observation_mode: tactical16
+  reward_module: student.v3_my_reward
+  target_mode: fixed
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 20.0
+  episode_step_limit: 1200
+
+env_config:
+  step_ratio: 6
+
+  # Same shooting-school scenario as the table1 baseline.
+  # Ownship starts behind the fixed target, at the same heading/speed.
+  ownship: [1000.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [1700.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+
+  action_postprocess:
+    roll_scale: 0.35
+    roll_max_abs: 0.40
+    pitch_scale: 0.85
+    pitch_max_abs: 0.85
+    rudder_scale: 1.0
+    rudder_max_abs: 1.0
+    throttle_scale: 1.0
+    throttle_max_abs: 1.0
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    mode: v3_result_driven_fixed20
+    time_penalty_per_s: 0.05
+    progress_gamma: 1.0
+    progress_scale: 12.0
+    damage_scale: 60.0
+
+    capture_range_inner_m: 500.0
+    capture_range_outer_m: 1500.0
+    capture_own_ata_gate_deg: 25.0
+    capture_target_ata_gate_deg: 125.0
+    capture_range_weight: 0.45
+    capture_own_ata_weight: 0.40
+    capture_rear_weight: 0.15
+
+    range_rate_penalty_per_s: 1.0
+    desired_closure_gain_per_s: 0.04
+    desired_closure_max_mps: 80.0
+    desired_opening_max_mps: 30.0
+    range_rate_error_reference_mps: 80.0
+
+    low_altitude_warning_m: 4500.0
+    low_altitude_penalty_per_s: 4.0
+    descent_guard_start_m: 6500.0
+    altitude_hold_target_m: 7000.0
+    altitude_hold_band_m: 1500.0
+
+    win_reward: 250.0
+    loss_reward: -250.0
+    draw_reward: -80.0
+    guard_fail_penalty: -150.0
+    crash_extra_penalty: -150.0
+    target_ground_reward: 0.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 5.0e-7
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.006
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 20
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 10
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 10
+  init_bundle: artifacts/models/table1/ppo_fixed20_shooting_school_from_stabilityb040_001/bundle_000040
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 10
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 10
+  steps: 400
+  episodes: 1
+  print: true
+
+notes: "Performance test for teammate v3 reward. Only reward_module/reward terms change from the table1 fixed20 shooting-school baseline; policy starts from table1 bundle_000040."

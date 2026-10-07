@@ -1,0 +1,12 @@
+action_postprocess_overlay:
+  pursuit_turn_assist:
+    rear_cone_deg: 120.0
+    default_turn_sign: 1.0
+  level_assist:
+    enabled: true
+    enable_below_ata_deg: 30.0
+    deadband_deg: 4.0
+    roll_ref_deg: 40.0
+    gain: 0.60
+    max_correction: 0.55
+

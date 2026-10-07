@@ -1,0 +1,100 @@
+# PHANG-MAN paper-close local run, CS shooting-school stage.
+#
+# Use this after a CZ policy trained with the same observation size exists.
+# It intentionally starts fresh unless runtime.init_bundle is set to a CZ bundle
+# from lm_phangman/cz_sac_fixed_paperlocal_001.
+name: lm_phangman_cs_sac_tailchase_paperlocal_001
+script: train_rllib
+
+output:
+  name: lm_phangman
+  tag: cs_sac_tailchase_paperlocal_001
+
+env:
+  observation_module: student.lm_observation_phangman27
+  reward_module: student.lm_reward_phangman_cs
+  target_mode: autopilot
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 20.0
+  episode_step_limit: 1200
+
+env_config:
+  step_ratio: 1
+  ownship: [1000.0, 0.0, -9000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [1700.0, 0.0, -9000.0, 0.0, 0.0, 0.0, 250.0]
+  target_autopilot:
+    heading_cmd: 0.0
+    altitude_cmd: 9000.0
+    speed_cmd: 250.0
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    policy_kind: cs
+    gunsnap_profile: cs
+    reward_scale: 1.0
+    step_penalty: 0.0
+    track_angle_scale: 1.0
+    gunsnap_blue_scale: 1.0
+    gunsnap_red_scale: 1.0
+    deck_scale: 1.0
+    track_lambda: 1.0
+    blue_beta: 3.0
+    red_beta: 3.0
+    wez_min_ft: 500.0
+    wez_max_ft: 3000.0
+    wez_half_angle_deg: 1.0
+    angle_gate_transition_deg: 0.10
+    deck_altitude_ft: 1000.0
+    deck_transition_ft: 50.0
+    cs_plateau_value: 1.0
+    terminal_enabled: false
+
+algo:
+  name: sac
+  framework: torch
+  lr: 2.0e-4
+  gamma: 0.99
+  tau: 1.0e-3
+  target_entropy: -4
+  train_batch_size: 256
+  minibatch_size: 256
+  replay_buffer_capacity: 500000
+  mlp:
+    enabled: true
+    fcnet_hiddens: [1024]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+
+runtime:
+  iterations: 20
+  # init_bundle: artifacts/models/lm_phangman/cz_sac_fixed_paperlocal_001/bundle_000020
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 5
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 10
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 5
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 5
+  steps: 300
+  episodes: 1
+  print: true
+
+notes: "Paper-close PHANG-MAN CS shooting school: SAC, CS reward formula, flat CS range gate, low-level action cadence via step_ratio 1. Set runtime.init_bundle after the matching CZ run exists."

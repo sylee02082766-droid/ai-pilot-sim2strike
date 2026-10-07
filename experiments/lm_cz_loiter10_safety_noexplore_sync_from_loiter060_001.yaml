@@ -1,0 +1,114 @@
+name: lm_cz_loiter10_safety_noexplore_sync_from_loiter060_001
+script: train_rllib
+
+output:
+  name: lm_hrl
+  tag: cz_loiter10_safety_noexplore_sync_from_loiter060_001
+
+env:
+  observation_mode: tactical16
+  reward_module: student.lm_reward_cz
+  target_mode: loiter
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 60.0
+  episode_step_limit: 3600
+
+env_config:
+  step_ratio: 6
+  target_loiter:
+    enabled: true
+    bank: 10.0
+    pitch: 0.0
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    step_penalty: -0.001
+    survival_bonus: 0.004
+    adverse_angle_scale: 0.02
+    track_angle_scale: 0.08
+    relative_position_scale: 0.35
+    closure_scale: 0.04
+    gunsnap_blue_scale: 0.15
+    gunsnap_red_scale: 0.80
+    deck_scale: 3.60
+    too_close_scale: 1.20
+    track_lambda: 1.0
+    blue_beta: 3.0
+    red_beta: 3.0
+    deck_altitude_ft: 5500.0
+    deck_transition_ft: 900.0
+    damage_scale: 0.0
+    pursuit_scale: 0.0
+    pursuit_half_angle_deg: 30.0
+    pursuit_range_m: 3000.0
+    low_altitude_penalty: 0.1
+    altitude_hold_scale: 0.08
+    altitude_target_m: 7000.0
+    altitude_band_m: 5200.0
+    safe_altitude_m: 3800.0
+    low_altitude_guard_scale: 4.20
+    attitude_penalty_scale: 0.15
+    speed_target_kcas: 320.0
+    speed_band_kcas: 220.0
+    speed_penalty_scale: 0.08
+    wez_band_scale: 0.0
+    wez_hold_bonus: 0.0
+    win_reward: 120.0
+    loss_reward: -180.0
+    draw_reward: -10.0
+    own_crash_penalty: -400.0
+    target_crash_reward: -8.0
+    guard_fail_penalty: -100.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 5.0e-6
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.025
+  explore: false
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+    free_log_std: false
+    log_std_clip_param: 2.0
+
+runtime:
+  iterations: 20
+  init_bundle: artifacts/models/lm_hrl/cz_loiter10_from_fixed020_001/bundle_000060
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 10
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 10
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 10
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 10
+  steps: 600
+  episodes: 1
+  print: true
+
+notes: "Retry deterministic PPO safety rewarm after two loader fixes: vector action_logp patch and checkpoint_io algorithm.set_weights-first sync so learner and remote EnvRunner receive init bundle weights."

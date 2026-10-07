@@ -1,0 +1,88 @@
+name: codex_ppo_v4_fixed20_from_table1b040_030
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_v4_fixed20_from_table1b040_030
+
+env:
+  observation_mode: tactical16
+  reward_module: student.v4_my_reward
+  target_mode: fixed
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 20.0
+  episode_step_limit: 1200
+
+env_config:
+  step_ratio: 6
+
+  # Same fixed shooting-school scenario used for baseline/v3 comparison.
+  ownship: [1000.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [1700.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+
+  action_postprocess:
+    roll_scale: 0.35
+    roll_max_abs: 0.40
+    pitch_scale: 0.85
+    pitch_max_abs: 0.85
+    rudder_scale: 1.0
+    rudder_max_abs: 1.0
+    throttle_scale: 1.0
+    throttle_max_abs: 1.0
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    mode: v4_fixed20_soft_hierarchy
+    policy_role: soft_hierarchy
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 2.0e-6
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.010
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 30
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 10
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 10
+  init_bundle: artifacts/models/table1/ppo_fixed20_shooting_school_from_stabilityb040_001/bundle_000040
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 10
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 10
+  steps: 400
+  episodes: 1
+  print: true
+
+notes: "v4 Lockheed/AlphaDogfight soft-hierarchy reward test. Same fixed20 scenario/init bundle as v3 comparisons; only reward_module changes to student.v4_my_reward."

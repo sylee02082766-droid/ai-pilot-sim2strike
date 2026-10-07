@@ -1,0 +1,96 @@
+name: survey_ppo_wez_school_loiter_from_entry40_30
+script: train_rllib
+
+output:
+  name: survey
+  tag: ppo_mlp_wez_school_loiter_entry40_001
+
+env:
+  observation_mode: tactical16
+  target_mode: loiter
+  target_behavior_dll: AIP_BASE_target.dll
+  reward_module: student.my_reward_wez_band
+  max_engage_time: 80.0
+  episode_step_limit: 4800
+
+env_config:
+  step_ratio: 6
+  target_loiter:
+    enabled: true
+    bank: 35.0
+    pitch: 0.0
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    step_penalty: -0.002
+    survival_bonus: 0.002
+    pursuit_scale: 0.24
+    pursuit_half_angle_deg: 60.0
+    pursuit_range_m: 7000.0
+    band_scale: 0.45
+    band_center_m: 560.0
+    band_half_width_m: 420.0
+    nose_band_half_angle_deg: 14.0
+    near_wez_bonus: 0.08
+    too_close_penalty: 0.22
+    damage_scale: 45.0
+    altitude_target_m: 7000.0
+    altitude_band_m: 5200.0
+    safe_altitude_m: 2600.0
+    low_altitude_penalty: 1.4
+    attitude_penalty_scale: 0.02
+    win_reward: 170.0
+    loss_reward: -190.0
+    draw_reward: -10.0
+    own_crash_penalty: -240.0
+    target_crash_reward: -8.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 1.0e-6
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.04
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 30
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 10
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 10
+  restore_checkpoint: artifacts/checkpoints/survey/ppo_mlp_dogfight_entry_stage80_001/checkpoint_000040
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 10
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: false
+  interval: 10
+  steps: 800
+  episodes: 1
+  print: true
+
+notes: "Exploratory shooting-school stage from entry_b040 against a loiter target. The goal is to learn WEZ-band nose alignment on an easier target, then evaluate transfer back to the official BT target."

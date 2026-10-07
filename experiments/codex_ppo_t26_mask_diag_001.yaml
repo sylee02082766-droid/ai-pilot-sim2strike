@@ -1,0 +1,202 @@
+name: codex_ppo_t26_mask_diag_001
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_t26_mask_diag_001
+
+env:
+  observation_mode: custom
+  observation_module: student.codex_tactical26
+  reward_module: student.my_reward_table1
+  target_mode: behavior_tree
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 60.0
+  episode_step_limit: 3600
+
+env_config:
+  step_ratio: 6
+  # Official max-distance tail-chase drill: 3000 ft ~= 914 m.  The target uses
+  # the native Release behavior-tree path, matching final local evaluation.
+  ownship: [2600.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [3514.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 280.0]
+  ownship_randomization:
+    enabled: true
+    radius: 60.0
+    r_roll: 2.0
+    r_pitch: 2.0
+    r_heading: 2.0
+
+  action_postprocess:
+    roll_scale: 0.12
+    roll_max_abs: 0.45
+    pitch_scale: 0.12
+    pitch_max_abs: 0.26
+    pitch_bias: 0.0
+    rudder_scale: 1.0
+    rudder_max_abs: 1.0
+    throttle_scale: 1.0
+    throttle_max_abs: 1.0
+    los_assist:
+      enabled: true
+      rudder_gain: 10.5
+      rudder_sign: -1.0
+      roll_gain: 0.90
+      roll_sign: 1.0
+      pitch_gain: 0.60
+      pitch_sign: -1.0
+      az_ref_deg: 1.25
+      el_ref_deg: 1.00
+      deadband_deg: 0.0
+    range_assist:
+      enabled: true
+      target_m: 760.0
+      deadband_m: 50.0
+      far_ref_m: 320.0
+      close_ref_m: 240.0
+      close_gain: 1.25
+      slow_gain: 0.25
+    bank_turn_assist:
+      enabled: true
+      az_ref_deg: 10.0
+      deadband_deg: 1.0
+      disable_ata_deg: 0.0
+      disable_in_wez: false
+      roll_sign: -1.0
+      roll_gain: 0.12
+      pull_gain: 0.05
+    safety_filter:
+      enabled: true
+      low_alt_m: 6850.0
+      min_alt_m: 6200.0
+      high_alt_m: 9500.0
+      high_alt_hard_m: 11500.0
+      pitch_down_ref_deg: 8.0
+      pitch_up_ref_deg: 16.0
+      pitch_up_floor: 0.03
+      pitch_up_max: 0.10
+      pitch_down_floor: 0.04
+      pitch_down_max: 0.16
+      throttle_floor: 0.10
+      throttle_ceiling: 0.70
+      roll_ref_deg: 45.0
+      roll_hard_deg: 85.0
+      roll_level_floor: 0.08
+      roll_level_max: 0.32
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    step_penalty: -0.0004
+    survival_bonus: 0.010
+    adverse_angle_scale: 0.035
+    track_angle_scale: 0.340
+    relative_position_scale: 0.420
+    closure_scale: 0.060
+    gunsnap_blue_scale: 0.900
+    gunsnap_red_scale: 0.100
+    too_close_scale: 0.12
+    track_lambda: 1.0
+    blue_beta: 3.0
+    red_beta: 3.0
+    damage_scale: 980.0
+    wez_band_scale: 5.60
+    wez_band_center_m: 760.0
+    wez_band_half_width_m: 260.0
+    wez_nose_half_angle_deg: 5.0
+    wez_hold_bonus: 88.00
+    official_wez_aim_scale: 180.0
+    official_wez_aim_half_angle_deg: 5.0
+    precision_aim_scale: 76.0
+    precision_aim_sigma_deg: 2.6
+    precision_aim_power: 1.0
+    deck_scale: 8.0
+    deck_altitude_ft: 8500.0
+    deck_transition_ft: 1800.0
+    altitude_hold_scale: 0.80
+    altitude_target_m: 7000.0
+    altitude_band_m: 2200.0
+    safe_altitude_m: 6200.0
+    low_altitude_guard_scale: 34.0
+    attitude_penalty_scale: 7.00
+    attitude_envelope_guard_scale: 10.00
+    pitch_envelope_ref_deg: 14.0
+    roll_envelope_ref_deg: 45.0
+    nose_down_guard_scale: 2.40
+    nose_down_pitch_ref_deg: 20.0
+    descent_rate_guard_scale: 2.20
+    descent_rate_ref_mps: 80.0
+    low_altitude_roll_guard_scale: 2.20
+    roll_guard_ref_deg: 50.0
+    action_pitch_down_guard_scale: 6.0
+    action_pitch_guard_scale: 0.30
+    action_roll_guard_scale: 2.0
+    action_roll_global_guard_scale: 0.35
+    action_guard_ref: 1.0
+    speed_target_kcas: 360.0
+    speed_band_kcas: 170.0
+    speed_penalty_scale: 0.08
+    pursuit_scale: 1.60
+    pursuit_half_angle_deg: 55.0
+    pursuit_range_m: 4200.0
+    low_altitude_penalty: 0.1
+    win_reward: 420.0
+    loss_reward: -320.0
+    draw_reward: -120.0
+    own_crash_penalty: -1400.0
+    target_crash_reward: 0.0
+    guard_fail_penalty: -260.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: true
+  lr: 2.0e-7
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.004
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 1
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 1
+  save_native_checkpoint: false
+  native_checkpoint_frequency: 0
+  init_bundle: artifacts/models/codex/tactical26_fullcritic_ckpt8_20260814
+  train_appended_observation_only: true
+  observation_base_size: 16
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 0
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 0
+  steps: 600
+  episodes: 2
+  print: true
+
+notes: "One-iteration diagnostic for appended-observation gradient masking. Existing actor tensors and the legacy 16 input columns must remain bit-identical."

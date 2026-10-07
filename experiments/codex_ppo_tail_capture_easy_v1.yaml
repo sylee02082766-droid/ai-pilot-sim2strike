@@ -1,0 +1,172 @@
+name: codex_ppo_tail_capture_easy_v1
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_tail_capture_easy_v1
+
+env:
+  observation_mode: custom
+  observation_module: student.codex_tactical26
+  reward_module: student.codex_reward_tail_capture
+  target_mode: autopilot
+  max_engage_time: 25.0
+  episode_step_limit: 250
+  min_altitude: 300.0
+
+env_config:
+  step_ratio: 6
+  offensive_saddle:
+    enabled: true
+    range_m: [900.0, 1400.0]
+    aspect_deg: [0.0, 15.0]
+    altitude_m: 4700.0
+    target_speed_mps: 245.0
+    own_speed_mps: 260.0
+  ownship_randomization: {enabled: false}
+
+  target_autopilot:
+    heading_cmd: 0.0
+    altitude_cmd: -4700.0
+    speed_cmd: 250.0
+  target_bt:
+    enabled: false
+    prob: 1.0
+    max_turn_rate_deg_s: 3.0
+    max_climb_rate_mps: 30.0
+    min_altitude_m: 2500.0
+    max_altitude_m: 9000.0
+    threat_range_m: 1500.0
+    threat_rear_deg: 90.0
+    threat_track_deg: 40.0
+    evade_enabled: false
+    lead_time_s: 2.0
+    speed_attack_mps: 250.0
+    speed_max_mps: 270.0
+    command_lead_max_deg: 35.0
+    mode_min_steps: 20
+
+  position_capture:
+    enabled: true
+    min_range_m: 500.0
+    max_range_m: 1800.0
+    own_ata_max_deg: 25.0
+    target_ata_min_deg: 120.0
+    hold_steps: 20
+    reward: 120.0
+  range_discipline: {enabled: true, max_range_m: 3500.0, grow_steps: 30}
+  altitude_discipline: {enabled: true, floor_m: 1200.0, sustain_steps: 5}
+  action_slew_limit: 0.20
+
+  action_postprocess:
+    throttle_min: 0.65
+    los_assist: {enabled: false}
+    range_assist: {enabled: false}
+    closure_assist: {enabled: false}
+    bank_turn_assist: {enabled: false}
+    merge_break_assist: {enabled: false}
+    pursuit_turn_assist: {enabled: false}
+    safety_filter:
+      enabled: true
+      low_alt_m: 1800.0
+      min_alt_m: 1000.0
+      high_alt_m: 9000.0
+      high_alt_hard_m: 11500.0
+      pitch_down_ref_deg: 12.0
+      pitch_up_ref_deg: 24.0
+      pitch_up_floor: 0.05
+      pitch_up_max: 0.28
+      pitch_down_floor: 0.05
+      pitch_down_max: 0.22
+      throttle_floor: 0.25
+      throttle_ceiling: 1.0
+      roll_ref_deg: 75.0
+      roll_hard_deg: 110.0
+      roll_level_floor: 0.04
+      roll_level_max: 0.18
+      roll_level_disable_above_ata_deg: 25.0
+
+  # Disable gun damage during this curriculum; the only objective is position.
+  wez: {angle_deg: 0.01, min_range_m: 0.0, max_range_m: 1.0}
+  reward:
+    allow_external_override: 1.0
+    mode: tail_capture_easy_v1
+    table1_step_scale: 0.0
+    relative_position_weight: 0.0
+    track_advantage_weight: 0.0
+    maneuver_progress_scale: 0.0
+    closure_control_penalty_per_s: 0.0
+    too_close_penalty_per_s: 0.0
+    precision_aim_penalty_per_s: 0.0
+    enemy_lock_penalty_per_s: 0.0
+    wez_solution_reward_per_s: 0.0
+    damage_scale: 0.0
+    time_penalty_per_s: 0.02
+    mutual_headon_penalty_per_s: 0.0
+    post_threat_opening_penalty_per_s: 0.0
+    safety_envelope_start_m: 3200.0
+    safety_envelope_rate_per_s: 3.0
+    survival_reward_per_s: 0.0
+    stable_flight_reward_per_s: 0.0
+    altitude_hold_target_m: 0.0
+    altitude_hold_reward_per_s: 0.0
+    evasion_detection_s: 9999.0
+    evasion_warning_s: 9999.0
+    evasion_warning_penalty_per_s: 0.0
+    win_reward: 0.0
+    target_evasion_reward: 0.0
+    loss_reward: -250.0
+    draw_reward: -20.0
+    own_crash_penalty: -500.0
+    target_deck_reward: 0.0
+    tail_progress_scale: 12.0
+    tail_progress_gamma: 0.997
+    tail_nose_sigma_deg: 40.0
+    tail_range_center_m: 1150.0
+    tail_range_sigma_m: 900.0
+    tail_rear_start_deg: 80.0
+    tail_nose_weight: 0.50
+    tail_rear_weight: 0.35
+    tail_range_weight: 0.15
+    tail_hold_reward_per_s: 2.0
+    tail_hold_min_range_m: 500.0
+    tail_hold_max_range_m: 1800.0
+    tail_hold_own_ata_deg: 25.0
+    tail_hold_target_ata_deg: 120.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: true
+  lr: 5.0e-5
+  gamma: 0.997
+  train_batch_size: 2048
+  minibatch_size: 256
+  gae_lambda: 0.95
+  clip_param: 0.12
+  entropy_coeff: 0.003
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 6
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 1
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 3
+  init_bundle: artifacts/models/codex/candidates/habfm_power80_v1
+
+dashboard: {enabled: true, logdir: artifacts/dashboard}
+policy_probe: {enabled: true, interval: 2, steps: 4, print: true}
+engagement_log: {enabled: true, interval: 2, steps: 250, episodes: 2, print: false}
+
+notes: "Tail-only PPO stage A: start 900-1400 m behind a straight target and learn a 2-second rear-position hold; no shooting reward."

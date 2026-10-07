@@ -1,0 +1,31 @@
+action_postprocess_overlay:
+  los_assist:
+    max_ata_deg: 25.0
+  bank_turn_assist:
+    max_ata_deg: 25.0
+  merge_break_assist:
+    enabled: true
+    max_ata_deg: 40.0
+    min_aa_deg: 135.0
+    max_distance_m: 2000.0
+    turn_sign: 1.0
+    roll_command: 0.72
+    pull_command: 0.48
+    rudder_fraction: 0.10
+    roll_max_abs: 0.85
+    pitch_max_abs: 0.70
+  pursuit_turn_assist:
+    enabled: true
+    min_ata_deg: 25.0
+    full_ata_deg: 110.0
+    rear_cone_deg: 120.0
+    default_turn_sign: 1.0
+    roll_sign: 1.0
+    roll_command: 0.72
+    pull_command: 0.48
+    blend: 1.0
+    rudder_fraction: 0.10
+    throttle_command: 1.0
+    throttle_mode: floor
+    roll_max_abs: 0.85
+    pitch_max_abs: 0.70

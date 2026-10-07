@@ -1,0 +1,59 @@
+name: codex_eval_official_random_loiter30_120s
+script: train_rllib
+
+env:
+  observation_mode: custom
+  observation_module: student.codex_tactical26
+  reward_module: student.v6_ppo_my_reward
+  target_mode: loiter
+  max_engage_time: 120.0
+  episode_step_limit: 1200
+  min_altitude: 300.0
+
+env_config:
+  step_ratio: 6
+  initial_scenario:
+    mode: two_circle_headon
+    alpha_deg: 0.0
+    turn_diameter_ft: 6000.0
+    separation_jitter_ft: [2000.0, 3000.0]
+    center_n_m: 3500.0
+    center_e_m: 0.0
+    altitude_m_range: [610.0, 9144.0]
+    speed_mps_range: [200.0, 300.0]
+    vertical_pitch_choices_deg: [0.0]
+    roll_range_deg: [0.0, 0.0]
+    side_choices: [-1.0, 1.0]
+  ownship_randomization: {enabled: false}
+  target_loiter: {enabled: true, bank: 30.0, pitch: 0.0}
+  wez: {angle_deg: 2.0, min_range_m: 152.4, max_range_m: 914.4}
+  reward:
+    allow_external_override: 1.0
+    target_evasion_reward: 0.0
+    evasion_detection_s: 9999.0
+    evasion_warning_s: 9999.0
+    evasion_warning_penalty_per_s: 0.0
+    target_deck_reward: 0.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: false
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 1
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+
+dashboard: {enabled: false}
+policy_probe: {enabled: false}
+engagement_log: {enabled: false}

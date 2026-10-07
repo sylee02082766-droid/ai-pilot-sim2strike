@@ -1,0 +1,80 @@
+name: survey_ppo_dogfight_entry_polish_from_b040_20
+script: train_rllib
+
+output:
+  name: survey
+  tag: ppo_mlp_dogfight_entry_b040_polish_001
+
+env:
+  observation_mode: tactical16
+  target_mode: behavior_tree
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 120.0
+  episode_step_limit: 7200
+
+env_config:
+  step_ratio: 6
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    mode: default
+    survival_bonus: 0.004
+    step_penalty: -0.002
+    damage_scale: 18.0
+    pursuit_scale: 0.38
+    pursuit_half_angle_deg: 65.0
+    pursuit_range_m: 8000.0
+    low_altitude_penalty: 2.4
+    win_reward: 160.0
+    loss_reward: -180.0
+    draw_reward: -8.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 2.0e-7
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.015
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 20
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 5
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 10
+  restore_checkpoint: artifacts/checkpoints/survey/ppo_mlp_dogfight_entry_stage80_001/checkpoint_000040
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 10
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: false
+  interval: 10
+  steps: 1200
+  episodes: 1
+  print: true
+
+notes: "Very low-LR polish from entry_b040 using the original dogfight-entry reward. Goal: test whether tiny PPO updates can improve b040 without the b050/b060 degradation seen in the original run."

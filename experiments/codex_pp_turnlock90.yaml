@@ -1,0 +1,3 @@
+action_postprocess_overlay:
+  pursuit_turn_assist:
+    lock_turn_above_ata_deg: 90.0

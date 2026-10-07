@@ -1,0 +1,79 @@
+name: codex_eval_t26_bt_headon914_60s
+script: train_rllib
+
+output:
+  name: codex
+  tag: eval_t26_bt_headon914_60s
+
+env:
+  observation_mode: custom
+  observation_module: student.codex_tactical26
+  reward_module: student.v6_ppo_my_reward
+  target_mode: behavior_tree
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 60.0
+  episode_step_limit: 3600
+
+env_config:
+  step_ratio: 6
+  ownship: [2600.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [3514.0, 0.0, -7000.0, 0.0, 0.0, 180.0, 280.0]
+  ownship_randomization:
+    enabled: true
+    radius: 60.0
+    r_roll: 2.0
+    r_pitch: 2.0
+    r_heading: 2.0
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    allow_external_override: 1.0
+    target_evasion_reward: 0.0
+    evasion_detection_s: 9999.0
+    evasion_warning_s: 9999.0
+    evasion_warning_penalty_per_s: 0.0
+    win_reward: 250.0
+    loss_reward: -250.0
+    draw_reward: -100.0
+    own_crash_penalty: -400.0
+    target_deck_reward: 0.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: false
+  lr: 1.0e-7
+  gamma: 0.997
+  train_batch_size: 2048
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.003
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 1
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+
+dashboard:
+  enabled: false
+
+policy_probe:
+  enabled: false
+
+engagement_log:
+  enabled: false
+
+notes: "Evaluation only: 3000 ft opposite-heading start against the native BT target."

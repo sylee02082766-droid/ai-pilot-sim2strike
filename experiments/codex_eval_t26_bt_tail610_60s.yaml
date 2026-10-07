@@ -1,0 +1,207 @@
+name: codex_eval_t26_bt_tail610_60s
+script: train_rllib
+
+output:
+  name: codex
+  tag: eval_t26_bt_tail610_60s
+
+env:
+  observation_mode: custom
+  observation_module: student.codex_tactical26
+  reward_module: student.v6_ppo_my_reward
+  target_mode: behavior_tree
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 60.0
+  episode_step_limit: 3600
+
+env_config:
+  step_ratio: 6
+
+  # Official-distance BT tail evaluation: 610 m is close to the 2000 ft setup.
+  ownship: [2600.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [3210.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 280.0]
+  ownship_randomization:
+    enabled: true
+    radius: 60.0
+    r_roll: 2.0
+    r_pitch: 2.0
+    r_heading: 2.0
+
+  action_postprocess:
+    roll_scale: 0.12
+    roll_max_abs: 0.45
+    pitch_scale: 0.12
+    pitch_max_abs: 0.26
+    pitch_bias: 0.0
+    rudder_scale: 1.0
+    rudder_max_abs: 1.0
+    throttle_scale: 1.0
+    throttle_max_abs: 1.0
+    los_assist:
+      enabled: true
+      rudder_gain: 10.5
+      rudder_sign: -1.0
+      roll_gain: 0.90
+      roll_sign: 1.0
+      pitch_gain: 0.60
+      pitch_sign: -1.0
+      az_ref_deg: 1.25
+      el_ref_deg: 1.00
+      deadband_deg: 0.0
+    range_assist:
+      enabled: true
+      target_m: 760.0
+      deadband_m: 50.0
+      far_ref_m: 320.0
+      close_ref_m: 240.0
+      close_gain: 1.25
+      slow_gain: 0.25
+    bank_turn_assist:
+      enabled: true
+      az_ref_deg: 10.0
+      deadband_deg: 1.0
+      disable_ata_deg: 0.0
+      disable_in_wez: false
+      roll_sign: -1.0
+      roll_gain: 0.12
+      pull_gain: 0.05
+    safety_filter:
+      enabled: true
+      low_alt_m: 6850.0
+      min_alt_m: 6200.0
+      high_alt_m: 9500.0
+      high_alt_hard_m: 11500.0
+      pitch_down_ref_deg: 8.0
+      pitch_up_ref_deg: 16.0
+      pitch_up_floor: 0.03
+      pitch_up_max: 0.10
+      pitch_down_floor: 0.04
+      pitch_down_max: 0.16
+      throttle_floor: 0.10
+      throttle_ceiling: 0.70
+      roll_ref_deg: 45.0
+      roll_hard_deg: 85.0
+      roll_level_floor: 0.08
+      roll_level_max: 0.32
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    mode: v6_bt900_killhold_official_distance
+    allow_external_override: 1.0
+
+    table1_step_scale: 0.12
+    relative_position_weight: 0.15
+    track_advantage_weight: 0.10
+    maneuver_progress_scale: 7.0
+    maneuver_position_weight: 0.65
+    maneuver_track_weight: 0.35
+    blue_beta: 3.0
+    red_beta_magnitude: 3.0
+    combat_gate_center_m: 2200.0
+    combat_gate_width_m: 650.0
+    closure_control_penalty_per_s: 0.70
+    closure_reference_mps: 80.0
+    desired_closure_gain_per_s: 0.07
+    desired_closure_max_mps: 80.0
+    desired_opening_max_mps: 45.0
+    hold_range_fraction: 0.50
+    enemy_lock_penalty_per_s: 0.60
+    too_close_penalty_per_s: 1.50
+    too_close_margin_m: 120.0
+    too_close_width_m: 80.0
+
+    precision_aim_penalty_per_s: 0.18
+    precision_log_reference_deg: 1.0
+    precision_log_max_deg: 60.0
+    precision_bridge_angle_deg: 10.0
+    enemy_threat_sigma_deg: 3.0
+    pre_wez_bridge_m: 360.0
+    pre_wez_bridge_fraction: 0.55
+    pre_wez_closure_ref_mps: 80.0
+    wez_solution_reward_per_s: 7.0
+    wez_solution_sigma_deg: 2.0
+    align_gunsnap_with_damage: 1.0
+    damage_scale: 120.0
+    evasion_warning_penalty_per_s: 0.0
+    post_threat_opening_penalty_per_s: 0.0
+    mutual_headon_penalty_per_s: 0.0
+    time_penalty_per_s: 0.006
+
+    safety_envelope_start_m: 5000.0
+    safety_envelope_rate_per_s: 3.0
+    safe_descent_mps: 25.0
+    safe_nose_down_deg: 10.0
+    safe_roll_deg: 65.0
+    hard_deck_m: 300.0
+
+    survival_reward_per_s: 0.005
+    stable_flight_reward_per_s: 0.025
+    altitude_hold_target_m: 7000.0
+    altitude_hold_band_m: 1200.0
+    altitude_hold_reward_per_s: 0.018
+    altitude_error_penalty_per_s: 0.025
+    attitude_delta_penalty_scale: 0.00045
+    control_magnitude_penalty_scale: 0.00018
+    control_delta_penalty_scale: 0.00045
+
+    win_reward: 80.0
+    loss_reward: 0.0
+    draw_reward: -35.0
+    own_crash_penalty: -400.0
+    target_deck_reward: 0.0
+    guard_fail_penalty: -180.0
+    range_discipline_penalty: -160.0
+    curriculum_success_reward: 0.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: true
+  lr: 2.0e-7
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.003
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 40
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 5
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 20
+  init_bundle: artifacts/models/codex/postprocess_sweeps/los95_tighter_los
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 5
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 10
+  steps: 500
+  episodes: 1
+  print: true
+
+notes: "Evaluation only: official-distance BT tail start at 610 m / about 2000 ft."

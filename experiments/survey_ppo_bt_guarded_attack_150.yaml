@@ -1,0 +1,91 @@
+name: survey_ppo_bt_guarded_attack_150
+script: train_rllib
+
+output:
+  name: survey
+  tag: ppo_mlp_bt_guarded_attack_001
+
+env:
+  observation_mode: tactical16
+  target_mode: behavior_tree
+  target_behavior_dll: AIP_BASE_target.dll
+  reward_module: student.my_reward_guarded_attack
+  max_engage_time: 120.0
+  episode_step_limit: 7200
+
+env_config:
+  step_ratio: 6
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    step_penalty: -0.002
+    survival_bonus: 0.002
+    pursuit_scale: 0.45
+    pursuit_half_angle_deg: 75.0
+    pursuit_range_m: 10000.0
+    close_range_bonus: 0.015
+    damage_scale: 25.0
+    altitude_target_m: 7000.0
+    altitude_band_m: 5000.0
+    safe_altitude_m: 2600.0
+    low_altitude_penalty: 1.2
+    attitude_penalty_scale: 0.025
+    speed_target_kcas: 320.0
+    speed_band_kcas: 220.0
+    speed_penalty_scale: 0.02
+    win_reward: 130.0
+    loss_reward: -150.0
+    draw_reward: -15.0
+    own_crash_penalty: -220.0
+    target_crash_reward: -5.0
+    guard_fail_penalty: -110.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 3.0e-5
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.18
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 150
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 25
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 50
+  init_bundle: artifacts/models/survey/ppo_mlp_bt_long_default_001/bundle_000125
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 25
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: false
+  interval: 25
+  steps: 1200
+  episodes: 1
+  print: true
+
+notes: "PPO continuation from bundle_000125 with guarded attack reward. Target altitude self-crash is not treated as a strong win."

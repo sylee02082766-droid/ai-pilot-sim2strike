@@ -1,0 +1,106 @@
+# Paper-close PHANG-MAN CZ with the smallest challenge-specific guard changes.
+#
+# Why this exists:
+# - The pure paper-close CZ fixed continuation completed episodes, but all
+#   completed training episodes were crash outcomes.
+# - We keep the PHANG-MAN CZ formula, but move the deck penalty higher and make
+#   too-close/terminal crash penalties stronger so the policy learns not to
+#   trade stable flight for a close pass.
+name: lm_phangman_cz_sac_fixed_guarded_from_long080_001
+script: train_rllib
+
+output:
+  name: lm_phangman
+  tag: cz_sac_fixed_guarded_from_long080_001
+
+env:
+  observation_module: student.lm_observation_phangman27
+  reward_module: student.lm_reward_phangman_cz
+  target_mode: fixed
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 60.0
+  episode_step_limit: 3600
+
+env_config:
+  step_ratio: 1
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    policy_kind: cz
+    gunsnap_profile: cz
+    reward_scale: 1.0
+    step_penalty: -0.001
+    relative_position_scale: 1.0
+    closure_scale: 0.35
+    gunsnap_blue_scale: 0.35
+    gunsnap_red_scale: 1.0
+    deck_scale: 3.0
+    too_close_scale: 2.0
+    track_lambda: 1.0
+    blue_beta: 3.0
+    red_beta: 3.0
+    wez_min_ft: 500.0
+    wez_max_ft: 3000.0
+    wez_half_angle_deg: 1.0
+    angle_gate_transition_deg: 0.10
+    deck_altitude_ft: 9000.0
+    deck_transition_ft: 1500.0
+    too_close_ft: 1000.0
+    too_close_transition_ft: 150.0
+    terminal_enabled: true
+    own_crash_penalty: -500.0
+    target_crash_reward: -10.0
+    guard_fail_penalty: -250.0
+    win_reward: 150.0
+    loss_reward: -150.0
+    draw_reward: -30.0
+
+algo:
+  name: sac
+  framework: torch
+  lr: 1.0e-4
+  gamma: 0.99
+  tau: 1.0e-3
+  target_entropy: -4
+  train_batch_size: 256
+  minibatch_size: 256
+  replay_buffer_capacity: 500000
+  mlp:
+    enabled: true
+    fcnet_hiddens: [1024]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+
+runtime:
+  iterations: 80
+  restore_checkpoint: artifacts/checkpoints/lm_phangman/cz_sac_fixed_paperlocal_long080_from020_001/checkpoint_final
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 20
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 40
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 20
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 20
+  steps: 900
+  episodes: 1
+  print: true
+
+notes: "Guarded continuation after pure PHANG-MAN CZ fixed produced crash outcomes. Keeps CZ terms but raises deck/too-close/crash penalties and lowers closure/gunsnap pressure."

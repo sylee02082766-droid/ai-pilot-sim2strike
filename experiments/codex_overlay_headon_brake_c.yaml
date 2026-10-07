@@ -1,0 +1,8 @@
+action_postprocess_overlay:
+  range_assist:
+    headon_brake:
+      enabled: true
+      start_distance_m: 2400.0
+      max_ata_deg: 15.0
+      min_aa_deg: 150.0
+      throttle_command: -0.60

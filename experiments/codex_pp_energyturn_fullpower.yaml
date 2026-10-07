@@ -1,0 +1,4 @@
+action_postprocess_overlay:
+  pursuit_turn_assist:
+    throttle_command: 1.0
+    throttle_mode: floor

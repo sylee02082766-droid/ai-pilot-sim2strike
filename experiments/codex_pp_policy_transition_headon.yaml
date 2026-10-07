@@ -1,0 +1,42 @@
+action_postprocess_overlay:
+  roll_scale: 0.35
+  roll_max_abs: 0.85
+  pitch_scale: 0.30
+  pitch_max_abs: 0.70
+  los_assist:
+    max_ata_deg: 25.0
+    rudder_gain: 7.0
+    roll_gain: 0.50
+    pitch_gain: 0.38
+    az_ref_deg: 2.0
+    el_ref_deg: 1.8
+  bank_turn_assist:
+    max_ata_deg: 25.0
+    roll_gain: 0.09
+    pull_gain: 0.04
+  merge_break_assist:
+    enabled: true
+    max_ata_deg: 45.0
+    min_aa_deg: 130.0
+    max_distance_m: 2200.0
+    turn_sign: 1.0
+    roll_command: 0.78
+    pull_command: 0.52
+    rudder_fraction: 0.08
+    roll_max_abs: 0.90
+    pitch_max_abs: 0.78
+  pursuit_turn_assist:
+    enabled: true
+    min_ata_deg: 25.0
+    full_ata_deg: 110.0
+    rear_cone_deg: 120.0
+    default_turn_sign: 1.0
+    roll_sign: 1.0
+    roll_command: 0.72
+    pull_command: 0.46
+    blend: 0.55
+    rudder_fraction: 0.10
+    throttle_command: 1.0
+    throttle_mode: floor
+    roll_max_abs: 0.90
+    pitch_max_abs: 0.78

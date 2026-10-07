@@ -1,0 +1,113 @@
+name: codex_ppo_habfm_turn_bc_ft_safe_002
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_habfm_turn_bc_ft_safe_002
+
+env:
+  observation_mode: custom
+  observation_module: student.codex_tactical26
+  reward_module: student.codex_reward_beam_capture
+  target_mode: loiter
+  max_engage_time: 80.0
+  episode_step_limit: 800
+  min_altitude: 300.0
+
+env_config:
+  step_ratio: 6
+  target_loiter: {enabled: true, bank: 0.0, pitch: 0.0}
+  initial_scenario:
+    mode: two_circle_headon
+    alpha_deg: 90.0
+    turn_diameter_ft: 0.0
+    separation_jitter_ft: [3000.0, 3000.0]
+    center_n_m: 3500.0
+    center_e_m: 0.0
+    altitude_m_range: [4572.0, 4572.0]
+    speed_mps_range: [250.0, 250.0]
+    vertical_pitch_choices_deg: [0.0]
+    roll_range_deg: [0.0, 0.0]
+    side_choices: [-1.0, 1.0]
+  ownship_randomization: {enabled: false}
+  action_postprocess: {}
+  wez: {angle_deg: 2.0, min_range_m: 152.4, max_range_m: 914.4}
+  reward:
+    allow_external_override: 1.0
+    mode: habfm_turn_bc_finetune
+    table1_step_scale: 0.0
+    relative_position_weight: 0.0
+    track_advantage_weight: 0.0
+    maneuver_progress_scale: 0.0
+    closure_control_penalty_per_s: 0.35
+    too_close_penalty_per_s: 2.0
+    precision_aim_penalty_per_s: 0.0
+    enemy_lock_penalty_per_s: 1.0
+    wez_solution_reward_per_s: 0.0
+    damage_scale: 0.0
+    time_penalty_per_s: 0.02
+    mutual_headon_penalty_per_s: 0.0
+    post_threat_opening_penalty_per_s: 2.0
+    post_threat_opening_start_m: 2500.0
+    post_threat_opening_width_m: 1000.0
+    safety_envelope_start_m: 2200.0
+    safety_envelope_rate_per_s: 4.0
+    evasion_detection_s: 9999.0
+    evasion_warning_s: 9999.0
+    evasion_warning_penalty_per_s: 0.0
+    win_reward: 0.0
+    target_evasion_reward: 0.0
+    loss_reward: -250.0
+    draw_reward: 0.0
+    own_crash_penalty: -500.0
+    target_deck_reward: 0.0
+    beam_progress_scale: 140.0
+    beam_own_aim_weight: 0.65
+    beam_target_tail_weight: 0.35
+    beam_hold_reward_per_s: 4.0
+    beam_success_own_ata_deg: 25.0
+    beam_success_target_ata_deg: 120.0
+    beam_success_max_range_m: 2500.0
+    beam_success_bonus: 60.0
+    beam_wrong_way_penalty_per_s: 2.0
+    beam_wrong_way_start_deg: 100.0
+    beam_runaway_start_m: 1800.0
+    beam_runaway_width_m: 2200.0
+    beam_runaway_penalty_per_s: 3.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: false
+  lr: 1.0e-7
+  gamma: 0.997
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.003
+  entropy_coeff: 0.0
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 2
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 1
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 2
+  dashboard_logdir: artifacts/dashboard
+  policy_probe_interval: 1
+  policy_probe_steps: 4
+  init_bundle: artifacts/models/codex/candidates/habfm_turn_bc_dagger_v1
+
+log:
+  notes: "Conservative deterministic PPO fine-tune after verified bilateral DAgger cloning."

@@ -1,0 +1,47 @@
+name: codex_eval_t16_beam3000_30s
+script: train_rllib
+
+output:
+  name: codex
+  tag: eval_t16_beam3000_30s
+
+env:
+  observation_mode: tactical16
+  target_mode: fixed
+  max_engage_time: 30.0
+  episode_step_limit: 300
+  min_altitude: 300.0
+
+env_config:
+  step_ratio: 6
+  initial_scenario:
+    # BattleServer-style 3000 ft beam start, tested in both turn directions.
+    mode: two_circle_headon
+    alpha_deg: 90.0
+    turn_diameter_ft: 0.0
+    separation_jitter_ft: [3000.0, 3000.0]
+    center_n_m: 3500.0
+    center_e_m: 0.0
+    altitude_m_range: [4572.0, 4572.0]
+    speed_mps_range: [250.0, 250.0]
+    vertical_pitch_choices_deg: [0.0]
+    roll_range_deg: [0.0, 0.0]
+    side_choices: [-1.0, 1.0]
+  ownship_randomization: {enabled: false}
+  wez: {angle_deg: 2.0, min_range_m: 152.4, max_range_m: 914.4}
+
+algo:
+  name: ppo
+  framework: torch
+  explore: false
+
+runtime:
+  iterations: 1
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+
+dashboard: {enabled: false}
+policy_probe: {enabled: false}
+engagement_log: {enabled: false}
+
+notes: "Evaluation only. Built-in tactical16 observation at the 3000 ft beam start."

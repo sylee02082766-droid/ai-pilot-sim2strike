@@ -1,0 +1,108 @@
+name: lm_cz_fixed_001
+script: train_rllib
+
+output:
+  name: lm_hrl
+  tag: cz_fixed_001
+
+env:
+  observation_mode: tactical16
+  reward_module: student.lm_reward_cz
+  target_mode: fixed
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 60.0
+  episode_step_limit: 3600
+
+env_config:
+  # 60 Hz sim / 6 = 10 Hz policy decision cadence, matching the common
+  # air-combat RL pattern and reducing inference pressure for later server use.
+  step_ratio: 6
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    step_penalty: -0.002
+    adverse_angle_scale: 0.0
+    track_angle_scale: 0.10
+    relative_position_scale: 1.00
+    closure_scale: 0.50
+    gunsnap_blue_scale: 0.35
+    gunsnap_red_scale: 1.00
+    deck_scale: 1.00
+    too_close_scale: 1.00
+    track_lambda: 1.0
+    blue_beta: 3.0
+    red_beta: 3.0
+    deck_altitude_ft: 1300.0
+    deck_transition_ft: 20.0
+    damage_scale: 0.0
+    pursuit_scale: 0.0
+    pursuit_half_angle_deg: 30.0
+    pursuit_range_m: 3000.0
+    low_altitude_penalty: 0.1
+    altitude_hold_scale: 0.15
+    altitude_target_m: 7000.0
+    altitude_band_m: 5000.0
+    safe_altitude_m: 2600.0
+    low_altitude_guard_scale: 2.0
+    attitude_penalty_scale: 0.08
+    speed_target_kcas: 320.0
+    speed_band_kcas: 220.0
+    speed_penalty_scale: 0.05
+    wez_band_scale: 0.0
+    wez_hold_bonus: 0.0
+    win_reward: 100.0
+    loss_reward: -100.0
+    draw_reward: -30.0
+    own_crash_penalty: -150.0
+    target_crash_reward: -5.0
+    guard_fail_penalty: -50.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 2.0e-4
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.2
+  explore: true
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 80
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 20
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 40
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 20
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 20
+  steps: 600
+  episodes: 1
+  print: true
+
+notes: "LM-HRL Phase 3 start: CZ low-level policy against fixed target. Goal is stable control-zone approach, not final WEZ shooting."

@@ -1,0 +1,10 @@
+action_postprocess_overlay:
+  pursuit_turn_assist:
+    min_ata_deg: 20.0
+    full_ata_deg: 90.0
+    roll_command: 0.70
+    pull_command: 0.55
+    throttle_command: 1.0
+    throttle_mode: floor
+    roll_max_abs: 0.80
+    pitch_max_abs: 0.75

@@ -1,0 +1,105 @@
+# PHANG-MAN paper-close local run, stage 1.
+#
+# Original LM paper choices:
+# - SAC, Adam, lr 2e-4, gamma 0.99, tau 1e-3, entropy target -4
+# - low-level policy action rate around 50 Hz
+# - one very large hidden layer: 12288 neurons
+# - replay buffer: 5e6
+#
+# Local adaptation:
+# - step_ratio 1 uses the 60 Hz challenge sim step as the closest available
+#   low-level action cadence.
+# - hidden layer and replay buffer are reduced so this can run on a normal PC.
+#   To test the literal paper size, change fcnet_hiddens to [12288] and
+#   replay_buffer_capacity to 5000000.
+name: lm_phangman_cz_sac_fixed_paperlocal_001
+script: train_rllib
+
+output:
+  name: lm_phangman
+  tag: cz_sac_fixed_paperlocal_001
+
+env:
+  observation_module: student.lm_observation_phangman27
+  reward_module: student.lm_reward_phangman_cz
+  target_mode: fixed
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 60.0
+  episode_step_limit: 3600
+
+env_config:
+  step_ratio: 1
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    policy_kind: cz
+    gunsnap_profile: cz
+    reward_scale: 1.0
+    step_penalty: 0.0
+    relative_position_scale: 1.0
+    closure_scale: 1.0
+    gunsnap_blue_scale: 1.0
+    gunsnap_red_scale: 1.0
+    deck_scale: 1.0
+    too_close_scale: 1.0
+    track_lambda: 1.0
+    blue_beta: 3.0
+    red_beta: 3.0
+    wez_min_ft: 500.0
+    wez_max_ft: 3000.0
+    wez_half_angle_deg: 1.0
+    angle_gate_transition_deg: 0.10
+    deck_altitude_ft: 1000.0
+    deck_transition_ft: 50.0
+    too_close_ft: 800.0
+    too_close_transition_ft: 50.0
+    terminal_enabled: false
+
+algo:
+  name: sac
+  framework: torch
+  lr: 2.0e-4
+  gamma: 0.99
+  tau: 1.0e-3
+  target_entropy: -4
+  train_batch_size: 256
+  minibatch_size: 256
+  replay_buffer_capacity: 500000
+  mlp:
+    enabled: true
+    fcnet_hiddens: [1024]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+
+runtime:
+  iterations: 20
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 5
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 10
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 5
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 5
+  steps: 600
+  episodes: 1
+  print: true
+
+notes: "Paper-close PHANG-MAN CZ start: SAC low-level policy, fixed target, paper reward components only, custom 27-feature available-state observation. Local network/replay are reduced from LM paper size."

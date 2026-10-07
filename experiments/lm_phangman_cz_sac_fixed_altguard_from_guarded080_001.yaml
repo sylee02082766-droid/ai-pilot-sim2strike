@@ -1,0 +1,125 @@
+# Continue from the guarded PHANG-MAN CZ run, but make fixed-target training a
+# flight-stability stage again.
+#
+# Evidence for this run:
+# - cz_sac_fixed_guarded_from_long080_001 still ended completed episodes by
+#   ownship crash / altitude below min.
+# - A direct local replay of its final bundle ended at 2810 steps with
+#   "ownship altitude below min" and no damage on either aircraft.
+#
+# Change from the previous YAML:
+# - Keep the PHANG-MAN CZ geometry terms, but strongly reduce closure/gunsnap
+#   pressure so the policy stops diving for a close pass.
+# - Enable the optional AIP stability guards added to lm_reward_phangman.py:
+#   altitude hold, low-altitude guard, attitude guard, and speed guard.
+name: lm_phangman_cz_sac_fixed_altguard_from_guarded080_001
+script: train_rllib
+
+output:
+  name: lm_phangman
+  tag: cz_sac_fixed_altguard_from_guarded080_001
+
+env:
+  observation_module: student.lm_observation_phangman27
+  reward_module: student.lm_reward_phangman_cz
+  target_mode: fixed
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 60.0
+  episode_step_limit: 3600
+
+env_config:
+  step_ratio: 1
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    policy_kind: cz
+    gunsnap_profile: cz
+    reward_scale: 1.0
+    step_penalty: -0.001
+    relative_position_scale: 0.35
+    closure_scale: 0.05
+    gunsnap_blue_scale: 0.05
+    gunsnap_red_scale: 1.0
+    deck_scale: 6.0
+    too_close_scale: 5.0
+    track_lambda: 1.0
+    blue_beta: 3.0
+    red_beta: 3.0
+    wez_min_ft: 500.0
+    wez_max_ft: 3000.0
+    wez_half_angle_deg: 1.0
+    angle_gate_transition_deg: 0.10
+    deck_altitude_ft: 12000.0
+    deck_transition_ft: 2500.0
+    too_close_ft: 1200.0
+    too_close_transition_ft: 250.0
+
+    # AIP stability guards. These are explicitly non-paper safety terms, added
+    # after the paper-close and guarded CZ runs both showed altitude loss.
+    altitude_hold_scale: 0.35
+    altitude_target_m: 7000.0
+    altitude_band_m: 5000.0
+    low_altitude_guard_scale: 5.0
+    safe_altitude_m: 3500.0
+    attitude_penalty_scale: 0.25
+    speed_penalty_scale: 0.12
+    speed_target_kcas: 300.0
+    speed_band_kcas: 180.0
+
+    terminal_enabled: true
+    own_crash_penalty: -1000.0
+    target_crash_reward: -20.0
+    guard_fail_penalty: -300.0
+    win_reward: 150.0
+    loss_reward: -180.0
+    draw_reward: -30.0
+
+algo:
+  name: sac
+  framework: torch
+  lr: 5.0e-5
+  gamma: 0.99
+  tau: 1.0e-3
+  target_entropy: -4
+  train_batch_size: 256
+  minibatch_size: 256
+  replay_buffer_capacity: 500000
+  mlp:
+    enabled: true
+    fcnet_hiddens: [1024]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+
+runtime:
+  iterations: 100
+  restore_checkpoint: artifacts/checkpoints/lm_phangman/cz_sac_fixed_guarded_from_long080_001/checkpoint_final
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 20
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 50
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 20
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 20
+  steps: 900
+  episodes: 1
+  print: true
+
+notes: "Fixed-target altitude-guard continuation. Same PHANG-MAN CZ backbone, but AIP stability guards are enabled because the previous final replay ended by ownship altitude below min."

@@ -1,0 +1,86 @@
+name: survey_ppo_bt_final_mild_jitter_smoke_12
+script: train_rllib
+
+output:
+  name: survey
+  tag: ppo_mlp_bt_final_mild_jitter_smoke_001
+
+env:
+  observation_mode: tactical16
+  target_mode: behavior_tree
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 80.0
+  episode_step_limit: 4800
+
+env_config:
+  step_ratio: 6
+  ownship_randomization:
+    enabled: true
+    radius: 150.0
+    r_roll: 2.0
+    r_pitch: 2.0
+    r_heading: 2.0
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    mode: default
+    survival_bonus: 0.006
+    step_penalty: -0.002
+    damage_scale: 12.0
+    pursuit_scale: 0.30
+    pursuit_half_angle_deg: 70.0
+    pursuit_range_m: 9000.0
+    low_altitude_penalty: 2.4
+    win_reward: 120.0
+    loss_reward: -160.0
+    draw_reward: -12.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 1.0e-6
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.04
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 12
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 6
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 6
+  restore_checkpoint: artifacts/checkpoints/survey/ppo_mlp_bt_restore_stage80_001/checkpoint_000080
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 6
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: false
+  interval: 6
+  steps: 800
+  episodes: 1
+  print: true
+
+notes: "Smoke test for mild initial ownship jitter from the current best BT stage80 checkpoint. This is not the main candidate unless it preserves the fixed-start stability metrics."

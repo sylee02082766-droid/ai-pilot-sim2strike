@@ -1,0 +1,203 @@
+name: codex_ppo_bt_tailchase762_finish_hold_from_noexplore_b024_001
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_bt_tailchase762_finish_hold_from_noexplore_b024_001
+
+env:
+  observation_mode: tactical16
+  reward_module: student.my_reward_table1
+  target_mode: behavior_tree
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 30.0
+  episode_step_limit: 1800
+
+env_config:
+  step_ratio: 6
+  target_behavior_provider: true
+
+  # Continuation of the best 762 m BT tail-chase school result.
+  # The previous bundle can enter official WEZ repeatedly but often times out
+  # with the target still alive. This stage keeps the geometry close and trains
+  # for longer WEZ hold / finish behavior before widening back to 1200 m.
+  ownship: [938.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [1700.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  ownship_randomization:
+    enabled: true
+    radius: 12.0
+    r_roll: 1.0
+    r_pitch: 1.0
+    r_heading: 1.0
+
+  action_postprocess:
+    roll_scale: 0.12
+    roll_max_abs: 0.18
+    pitch_scale: 0.12
+    pitch_max_abs: 0.18
+    pitch_bias: 0.0
+    rudder_scale: 1.0
+    rudder_max_abs: 1.0
+    throttle_scale: 1.0
+    throttle_max_abs: 1.0
+    los_assist:
+      enabled: true
+      rudder_gain: 2.40
+      rudder_sign: -1.0
+      roll_gain: 0.18
+      roll_sign: 1.0
+      pitch_gain: 0.16
+      pitch_sign: -1.0
+      az_ref_deg: 5.0
+      el_ref_deg: 3.0
+      deadband_deg: 0.0
+    range_assist:
+      enabled: true
+      target_m: 760.0
+      deadband_m: 55.0
+      far_ref_m: 260.0
+      close_ref_m: 180.0
+      close_gain: 0.80
+      slow_gain: 0.10
+    bank_turn_assist:
+      enabled: true
+      az_ref_deg: 8.0
+      deadband_deg: 1.0
+      disable_ata_deg: 0.0
+      disable_in_wez: false
+      roll_sign: -1.0
+      roll_gain: 0.08
+      pull_gain: 0.035
+    safety_filter:
+      enabled: true
+      low_alt_m: 6850.0
+      min_alt_m: 6200.0
+      high_alt_m: 8500.0
+      high_alt_hard_m: 10500.0
+      pitch_down_ref_deg: 8.0
+      pitch_up_ref_deg: 14.0
+      pitch_up_floor: 0.03
+      pitch_up_max: 0.10
+      pitch_down_floor: 0.04
+      pitch_down_max: 0.16
+      throttle_floor: 0.05
+      throttle_ceiling: 0.60
+      roll_ref_deg: 45.0
+      roll_hard_deg: 80.0
+      roll_level_floor: 0.08
+      roll_level_max: 0.32
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    step_penalty: -0.0005
+    survival_bonus: 0.008
+    adverse_angle_scale: 0.020
+    track_angle_scale: 0.180
+    relative_position_scale: 0.120
+    closure_scale: 0.004
+    gunsnap_blue_scale: 1.120
+    gunsnap_red_scale: 0.060
+    too_close_scale: 0.16
+    track_lambda: 1.0
+    blue_beta: 3.0
+    red_beta: 3.0
+    damage_scale: 760.0
+    wez_band_scale: 3.20
+    wez_band_center_m: 720.0
+    wez_band_half_width_m: 260.0
+    wez_nose_half_angle_deg: 2.0
+    wez_hold_bonus: 70.00
+    official_wez_aim_scale: 95.0
+    official_wez_aim_half_angle_deg: 1.5
+    precision_aim_scale: 42.0
+    precision_aim_sigma_deg: 1.8
+    precision_aim_power: 1.0
+    deck_scale: 10.0
+    deck_altitude_ft: 8500.0
+    deck_transition_ft: 1800.0
+    altitude_hold_scale: 1.00
+    altitude_target_m: 7000.0
+    altitude_band_m: 1800.0
+    safe_altitude_m: 6650.0
+    low_altitude_guard_scale: 40.0
+    attitude_penalty_scale: 9.00
+    attitude_envelope_guard_scale: 12.00
+    pitch_envelope_ref_deg: 12.0
+    roll_envelope_ref_deg: 38.0
+    nose_down_guard_scale: 3.00
+    nose_down_pitch_ref_deg: 18.0
+    descent_rate_guard_scale: 3.00
+    descent_rate_ref_mps: 70.0
+    low_altitude_roll_guard_scale: 3.00
+    roll_guard_ref_deg: 42.0
+    action_pitch_down_guard_scale: 14.0
+    action_pitch_guard_scale: 0.45
+    action_roll_guard_scale: 4.0
+    action_roll_global_guard_scale: 0.55
+    action_guard_ref: 1.0
+    speed_target_kcas: 300.0
+    speed_band_kcas: 105.0
+    speed_penalty_scale: 0.20
+    pursuit_scale: 0.65
+    pursuit_half_angle_deg: 45.0
+    pursuit_range_m: 2600.0
+    low_altitude_penalty: 0.1
+    win_reward: 420.0
+    loss_reward: -300.0
+    draw_reward: -140.0
+    own_crash_penalty: -1400.0
+    target_crash_reward: 0.0
+    guard_fail_penalty: -260.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: false
+  lr: 2.0e-7
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.006
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 12
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 3
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 6
+  init_bundle: artifacts/models/table1/ppo_bt_tailchase762_posjitter10_noexplore_from_j5b024_001/bundle_000024
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 3
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 3
+  steps: 500
+  episodes: 5
+  print: true
+
+notes: "Codex finish/hold pilot. Starts from the best 762 m BT tail-chase bundle and extends max time from 20s to 30s. The reward reduces broad band farming and raises official WEZ hold, precision aim, damage differential, and draw penalty so the policy is pushed to keep the nose inside the official cone long enough to finish rather than merely touch WEZ."

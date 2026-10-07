@@ -1,0 +1,207 @@
+name: codex_ppo_v6_fixed1200_reacquire_040
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_v6_fixed1200_reacquire_040
+
+env:
+  observation_mode: tactical16
+  reward_module: student.v6_ppo_my_reward
+  target_mode: fixed
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 30.0
+  episode_step_limit: 1800
+
+env_config:
+  step_ratio: 6
+
+  # Mirrors the fair_compare fixed_tail failure case:
+  # about 1200 m behind, modest lateral/attitude jitter, blue 300 m/s, red 280 m/s.
+  ownship: [2300.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [3500.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 280.0]
+  ownship_randomization:
+    enabled: true
+    radius: 140.0
+    r_roll: 4.0
+    r_pitch: 4.0
+    r_heading: 5.0
+
+  action_postprocess:
+    roll_scale: 0.12
+    roll_max_abs: 0.45
+    pitch_scale: 0.12
+    pitch_max_abs: 0.26
+    pitch_bias: 0.0
+    rudder_scale: 1.0
+    rudder_max_abs: 1.0
+    throttle_scale: 1.0
+    throttle_max_abs: 1.0
+    los_assist:
+      enabled: true
+      rudder_gain: 5.5
+      rudder_sign: -1.0
+      roll_gain: 0.62
+      roll_sign: 1.0
+      pitch_gain: 0.34
+      pitch_sign: -1.0
+      az_ref_deg: 2.8
+      el_ref_deg: 2.0
+      deadband_deg: 0.0
+    range_assist:
+      enabled: true
+      target_m: 740.0
+      deadband_m: 70.0
+      far_ref_m: 450.0
+      close_ref_m: 450.0
+      close_gain: 1.10
+      slow_gain: 0.75
+    bank_turn_assist:
+      enabled: true
+      az_ref_deg: 9.0
+      deadband_deg: 0.8
+      disable_ata_deg: 0.0
+      disable_in_wez: false
+      roll_sign: -1.0
+      roll_gain: 0.16
+      pull_gain: 0.07
+    safety_filter:
+      enabled: true
+      low_alt_m: 6850.0
+      min_alt_m: 6200.0
+      high_alt_m: 9500.0
+      high_alt_hard_m: 11500.0
+      pitch_down_ref_deg: 8.0
+      pitch_up_ref_deg: 16.0
+      pitch_up_floor: 0.03
+      pitch_up_max: 0.10
+      pitch_down_floor: 0.04
+      pitch_down_max: 0.16
+      throttle_floor: 0.10
+      throttle_ceiling: 0.70
+      roll_ref_deg: 45.0
+      roll_hard_deg: 85.0
+      roll_level_floor: 0.08
+      roll_level_max: 0.32
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    mode: v6_fixed1200_reacquire_damage40
+    allow_external_override: 1.0
+
+    table1_step_scale: 0.10
+    relative_position_weight: 0.0
+    track_advantage_weight: 0.0
+    maneuver_progress_scale: 7.0
+    maneuver_position_weight: 0.65
+    maneuver_track_weight: 0.35
+    blue_beta: 3.0
+    red_beta_magnitude: 3.0
+    combat_gate_center_m: 2600.0
+    combat_gate_width_m: 800.0
+    closure_control_penalty_per_s: 1.40
+    closure_reference_mps: 80.0
+    desired_closure_gain_per_s: 0.10
+    desired_closure_max_mps: 80.0
+    desired_opening_max_mps: 55.0
+    hold_range_fraction: 0.50
+    enemy_lock_penalty_per_s: 0.60
+    too_close_penalty_per_s: 4.00
+    too_close_margin_m: 220.0
+    too_close_width_m: 120.0
+
+    precision_aim_penalty_per_s: 0.30
+    precision_log_reference_deg: 1.0
+    precision_log_max_deg: 60.0
+    precision_bridge_angle_deg: 10.0
+    enemy_threat_sigma_deg: 3.0
+    pre_wez_bridge_m: 500.0
+    pre_wez_bridge_fraction: 0.60
+    pre_wez_closure_ref_mps: 80.0
+    wez_solution_reward_per_s: 3.5
+    wez_solution_sigma_deg: 3.0
+    align_gunsnap_with_damage: 1.0
+    damage_scale: 40.0
+    evasion_warning_penalty_per_s: 0.0
+    post_threat_opening_penalty_per_s: 0.0
+    mutual_headon_penalty_per_s: 0.0
+    time_penalty_per_s: 0.015
+
+    safety_envelope_start_m: 5000.0
+    safety_envelope_rate_per_s: 3.0
+    safe_descent_mps: 25.0
+    safe_nose_down_deg: 10.0
+    safe_roll_deg: 65.0
+    hard_deck_m: 300.0
+
+    survival_reward_per_s: 0.005
+    stable_flight_reward_per_s: 0.025
+    altitude_hold_target_m: 7000.0
+    altitude_hold_band_m: 1200.0
+    altitude_hold_reward_per_s: 0.018
+    altitude_error_penalty_per_s: 0.025
+    attitude_delta_penalty_scale: 0.00045
+    control_magnitude_penalty_scale: 0.00018
+    control_delta_penalty_scale: 0.00045
+
+    win_reward: 20.0
+    loss_reward: 0.0
+    draw_reward: -25.0
+    own_crash_penalty: -400.0
+    target_deck_reward: 0.0
+    guard_fail_penalty: -180.0
+    range_discipline_penalty: -180.0
+    curriculum_success_reward: 0.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: true
+  lr: 1.5e-7
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.002
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 40
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 10
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 20
+  init_bundle: artifacts/models/codex/ppo_v6_s3_gen_loiter5_jitter120_060/bundle_000020
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 10
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 10
+  steps: 500
+  episodes: 1
+  print: true
+
+notes: "Targeted fixed-tail reacquisition run. Starts from v6_s3_gen_b020, expands the 1200m tail condition that failed fair_compare, strengthens closure/too-close penalties, widens pre-WEZ bridge, and increases range assist deceleration to reduce one-pass overshoot."

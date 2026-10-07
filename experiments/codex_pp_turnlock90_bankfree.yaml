@@ -1,0 +1,3 @@
+action_postprocess_overlay:
+  safety_filter:
+    roll_level_disable_above_ata_deg: 45.0

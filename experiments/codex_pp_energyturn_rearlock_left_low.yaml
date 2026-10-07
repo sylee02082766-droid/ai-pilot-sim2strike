@@ -1,0 +1,5 @@
+action_postprocess_overlay:
+  pursuit_turn_assist:
+    rear_cone_deg: 120.0
+    default_turn_sign: -1.0
+

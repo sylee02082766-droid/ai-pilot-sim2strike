@@ -1,0 +1,80 @@
+name: survey_ppo_bt_from_loiter_safe_100
+script: train_rllib
+
+output:
+  name: survey
+  tag: ppo_mlp_bt_from_loiter_safe_001
+
+env:
+  observation_mode: tactical16
+  target_mode: behavior_tree
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 120.0
+  episode_step_limit: 7200
+
+env_config:
+  step_ratio: 6
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+  reward:
+    mode: default
+    survival_bonus: 0.004
+    step_penalty: -0.002
+    damage_scale: 20.0
+    pursuit_scale: 0.45
+    pursuit_half_angle_deg: 60.0
+    pursuit_range_m: 8000.0
+    low_altitude_penalty: 2.0
+    win_reward: 120.0
+    loss_reward: -140.0
+    draw_reward: -20.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 3.0e-5
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.2
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 100
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 20
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 50
+  init_bundle: artifacts/models/survey/ppo_mlp_loiter_wez_001/bundle_000080
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 20
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: false
+  interval: 20
+  steps: 1200
+  episodes: 1
+  print: true
+
+notes: "Return loiter WEZ candidate to BT with conservative LR and stronger low-altitude penalty."

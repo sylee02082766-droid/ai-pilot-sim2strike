@@ -1,0 +1,125 @@
+name: codex_ppo_v3_fixed20_aimboost_from_table1b040_030
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_v3_fixed20_aimboost_from_table1b040_030
+
+env:
+  observation_mode: tactical16
+  reward_module: student.v3_my_reward
+  target_mode: fixed
+  target_behavior_dll: AIP_BASE_target.dll
+  max_engage_time: 20.0
+  episode_step_limit: 1200
+
+env_config:
+  step_ratio: 6
+
+  # Same fixed shooting-school scenario as the baseline/v3 first pass.
+  ownship: [1000.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+  target: [1700.0, 0.0, -7000.0, 0.0, 0.0, 0.0, 300.0]
+
+  action_postprocess:
+    roll_scale: 0.35
+    roll_max_abs: 0.40
+    pitch_scale: 0.85
+    pitch_max_abs: 0.85
+    rudder_scale: 1.0
+    rudder_max_abs: 1.0
+    throttle_scale: 1.0
+    throttle_max_abs: 1.0
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    mode: v3_fixed20_aimboost
+    time_penalty_per_s: 0.05
+
+    # The first v3 pass already held range_score near 1.0, but own_ata_score
+    # stayed low. This variant shifts shaping pressure toward nose alignment.
+    progress_gamma: 1.0
+    progress_scale: 28.0
+    capture_range_inner_m: 500.0
+    capture_range_outer_m: 1500.0
+    capture_own_ata_gate_deg: 25.0
+    capture_target_ata_gate_deg: 125.0
+    capture_range_weight: 0.20
+    capture_own_ata_weight: 0.65
+    capture_rear_weight: 0.15
+
+    # Avoid over-optimizing closure once the aircraft is already in range.
+    range_rate_penalty_per_s: 0.20
+    desired_closure_gain_per_s: 0.04
+    desired_closure_max_mps: 80.0
+    desired_opening_max_mps: 30.0
+    range_rate_error_reference_mps: 80.0
+
+    # Reward real health exchange more strongly than geometric near-misses.
+    damage_scale: 120.0
+
+    low_altitude_warning_m: 4500.0
+    low_altitude_penalty_per_s: 4.0
+    descent_guard_start_m: 6500.0
+    descent_rate_penalty_per_s: 1.0
+    attitude_penalty_per_s: 0.6
+    altitude_hold_target_m: 7000.0
+    altitude_hold_band_m: 1500.0
+
+    win_reward: 250.0
+    loss_reward: -250.0
+    draw_reward: -80.0
+    guard_fail_penalty: -150.0
+    crash_extra_penalty: -150.0
+    target_ground_reward: 0.0
+
+algo:
+  name: ppo
+  framework: torch
+  lr: 2.0e-6
+  gamma: 0.99
+  train_batch_size: 1024
+  minibatch_size: 128
+  gae_lambda: 0.95
+  clip_param: 0.010
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 30
+  num_env_runners: 1
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 10
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 10
+  init_bundle: artifacts/models/table1/ppo_fixed20_shooting_school_from_stabilityb040_001/bundle_000040
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+
+policy_probe:
+  enabled: true
+  interval: 10
+  steps: 4
+  print: true
+
+engagement_log:
+  enabled: true
+  interval: 10
+  steps: 400
+  episodes: 1
+  print: true
+
+notes: "Second v3 performance pass. Same scenario/init bundle, but reward weights are shifted toward own ATA and damage after first v3 run showed range was already solved."

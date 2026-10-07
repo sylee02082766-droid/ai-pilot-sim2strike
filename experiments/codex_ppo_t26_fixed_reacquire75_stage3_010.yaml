@@ -1,0 +1,222 @@
+name: codex_ppo_t26_fixed_reacquire75_stage3_010
+script: train_rllib
+
+output:
+  name: codex
+  tag: ppo_t26_fixed_reacquire75_stage3_010
+
+env:
+  observation_mode: custom
+  observation_module: student.codex_tactical26
+  reward_module: student.v6_ppo_my_reward
+  target_mode: fixed
+  max_engage_time: 58.0
+  episode_step_limit: 580
+
+env_config:
+  step_ratio: 6
+  ownship: [2250.0, 0.0, -8000.0, 0.0, 0.0, 0.0, 285.0]
+  target: [4750.0, 0.0, -8000.0, 0.0, 0.0, 180.0, 285.0]
+  ownship_randomization:
+    enabled: true
+    radius: 80.0
+    r_roll: 3.0
+    r_pitch: 2.0
+    r_heading: 3.0
+  target_autopilot:
+    heading_cmd: 180.0
+    altitude_cmd: -8000.0
+    speed_cmd: 260.0
+  target_bt:
+    enabled: true
+    prob: 0.0
+  range_discipline:
+    enabled: true
+    max_range_m: 35000.0
+    grow_steps: 60
+  reacquire_curriculum:
+    enabled: true
+    merge_distance_m: 900.0
+    departure_ata_deg: 140.0
+    success_ata_deg: 75.0
+    success_range_m: 30000.0
+    sustain_steps: 3
+
+  # Exact action postprocess from the verified true_close1000 candidate.
+  action_postprocess:
+    roll_scale: 0.35
+    roll_max_abs: 0.85
+    pitch_scale: 0.30
+    pitch_max_abs: 0.70
+    pitch_bias: 0.0
+    rudder_scale: 1.0
+    rudder_max_abs: 1.0
+    throttle_scale: 1.0
+    throttle_max_abs: 1.0
+    los_assist:
+      enabled: true
+      max_ata_deg: 25.0
+      rudder_gain: 7.0
+      rudder_sign: -1.0
+      roll_gain: 0.50
+      roll_sign: 1.0
+      pitch_gain: 0.38
+      pitch_sign: -1.0
+      az_ref_deg: 2.0
+      el_ref_deg: 1.8
+      deadband_deg: 0.0
+    range_assist:
+      enabled: true
+      target_m: 700.0
+      deadband_m: 40.0
+      far_ref_m: 320.0
+      close_ref_m: 220.0
+      close_gain: 10.0
+      slow_gain: 0.14
+    bank_turn_assist:
+      enabled: true
+      max_ata_deg: 25.0
+      az_ref_deg: 10.0
+      deadband_deg: 1.0
+      disable_ata_deg: 0.0
+      disable_in_wez: false
+      roll_sign: -1.0
+      roll_gain: 0.09
+      pull_gain: 0.04
+    merge_break_assist:
+      enabled: true
+      max_ata_deg: 45.0
+      min_aa_deg: 130.0
+      max_distance_m: 2200.0
+      turn_sign: 1.0
+      roll_command: 0.78
+      pull_command: 0.52
+      rudder_fraction: 0.08
+      roll_max_abs: 0.90
+      pitch_max_abs: 0.78
+    pursuit_turn_assist:
+      enabled: true
+      min_ata_deg: 25.0
+      full_ata_deg: 110.0
+      rear_cone_deg: 120.0
+      lock_turn_above_ata_deg: 90.0
+      default_turn_sign: 1.0
+      roll_sign: 1.0
+      roll_command: 0.72
+      pull_command: 0.46
+      blend: 0.55
+      rudder_fraction: 0.10
+      throttle_command: 1.0
+      throttle_mode: floor
+      roll_max_abs: 0.90
+      pitch_max_abs: 0.78
+    safety_filter:
+      enabled: true
+      low_alt_m: 6850.0
+      min_alt_m: 6200.0
+      high_alt_m: 9500.0
+      high_alt_hard_m: 11500.0
+      pitch_down_ref_deg: 8.0
+      pitch_up_ref_deg: 16.0
+      pitch_up_floor: 0.03
+      pitch_up_max: 0.10
+      pitch_down_floor: 0.04
+      pitch_down_max: 0.16
+      throttle_floor: 0.10
+      throttle_ceiling: 0.70
+      roll_ref_deg: 65.0
+      roll_hard_deg: 90.0
+      roll_level_floor: 0.10
+      roll_level_max: 0.40
+      roll_level_disable_above_ata_deg: 181.0
+
+  wez:
+    angle_deg: 2.0
+    min_range_m: 152.4
+    max_range_m: 914.4
+
+  reward:
+    allow_external_override: 1.0
+    mode: fixed_reacquire75_stage3
+    table1_step_scale: 0.10
+    relative_position_weight: 0.0
+    track_advantage_weight: 0.0
+    maneuver_progress_scale: 20.0
+    maneuver_position_weight: 0.65
+    maneuver_track_weight: 0.35
+    combat_gate_center_m: 5000.0
+    combat_gate_width_m: 1000.0
+    closure_control_penalty_per_s: 1.0
+    too_close_penalty_per_s: 1.5
+    precision_aim_penalty_per_s: 0.65
+    enemy_lock_penalty_per_s: 1.0
+    wez_solution_reward_per_s: 8.0
+    damage_scale: 100.0
+    time_penalty_per_s: 0.03
+    mutual_headon_penalty_per_s: 2.0
+    mutual_headon_sigma_deg: 25.0
+    mutual_headon_range_m: 3200.0
+    mutual_headon_range_width_m: 600.0
+    post_threat_opening_penalty_per_s: 3.0
+    post_threat_opening_start_m: 1600.0
+    post_threat_opening_width_m: 400.0
+    safety_envelope_start_m: 6000.0
+    safety_envelope_rate_per_s: 4.0
+    evasion_detection_s: 9999.0
+    evasion_warning_s: 9999.0
+    evasion_warning_penalty_per_s: 0.0
+    win_reward: 300.0
+    target_evasion_reward: 0.0
+    loss_reward: -300.0
+    draw_reward: -120.0
+    own_crash_penalty: -500.0
+    target_deck_reward: 0.0
+    curriculum_success_reward: 300.0
+
+algo:
+  name: ppo
+  framework: torch
+  explore: true
+  lr: 3.0e-5
+  gamma: 0.997
+  train_batch_size: 4096
+  minibatch_size: 512
+  gae_lambda: 0.95
+  clip_param: 0.08
+  entropy_coeff: 0.002
+  mlp:
+    enabled: true
+    fcnet_hiddens: [256, 256]
+    fcnet_activation: relu
+    head_fcnet_hiddens: []
+    head_fcnet_activation: relu
+    vf_share_layers: true
+
+runtime:
+  iterations: 10
+  num_env_runners: 2
+  num_envs_per_env_runner: 1
+  rollout_fragment_length: auto
+  batch_mode: truncate_episodes
+  save_lightweight_bundle: true
+  lightweight_bundle_frequency: 5
+  save_native_checkpoint: true
+  native_checkpoint_frequency: 5
+  init_bundle: artifacts/models/codex/ppo_t26_fixed_reacquire90_stage2_010/bundle_000005
+
+dashboard:
+  enabled: true
+  logdir: artifacts/dashboard
+policy_probe:
+  enabled: true
+  interval: 5
+  steps: 4
+  print: true
+engagement_log:
+  enabled: true
+  interval: 5
+  steps: 580
+  episodes: 1
+  print: true
+
+notes: "Reacquisition stage 3: fixed target, tighten the post-merge gate from ATA 90 to 75 degrees inside 30 km."
